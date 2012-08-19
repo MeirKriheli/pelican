@@ -20,9 +20,9 @@ from pelican.utils import get_date, open
 
 
 _METADATA_PROCESSORS = {
-    'tags': lambda x, y: [Tag(tag, y) for tag in unicode(x).split(',')],
-    'date': lambda x, y: get_date(x),
-    'status': lambda x, y: unicode.strip(x),
+    'tags': lambda x, y, z: [Tag(tag, y, z) for tag in unicode(x).split(',')],
+    'date': lambda x, y, z: get_date(x),
+    'status': lambda x, y, z: unicode.strip(x),
     'category': Category,
     'author': Author,
 }
@@ -34,12 +34,15 @@ class Reader(object):
 
     def __init__(self, settings):
         self.settings = settings
+        self.default_lang = getattr(settings, 'DEFAULT_LANG', '').lower()
 
     def process_metadata(self, metadata):
         result = {}
+        lang = metadata.get('lang', self.default_lang)
         for name, value in metadata.items():
             if name in _METADATA_PROCESSORS:
-                value = _METADATA_PROCESSORS[name](value, self.settings)
+                value = _METADATA_PROCESSORS[name](
+                    value, self.settings, lang)
             result[name] = value
         return result
 

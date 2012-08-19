@@ -174,10 +174,11 @@ class Quote(Page):
 
 
 class URLWrapper(object):
-    def __init__(self, name, settings):
+    def __init__(self, name, settings, lang=None):
         self.name = unicode(name)
         self.slug = slugify(self.name)
         self.settings = settings
+        self.lang = lang
 
     def as_dict(self):
         return self.__dict__
