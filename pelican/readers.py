@@ -35,10 +35,13 @@ class Reader(object):
     def __init__(self, settings):
         self.settings = settings
 
-    def process_metadata(self, name, value):
-        if name in _METADATA_PROCESSORS:
-            return _METADATA_PROCESSORS[name](value, self.settings)
-        return value
+    def process_metadata(self, metadata):
+        result = {}
+        for name, value in metadata.items():
+            if name in _METADATA_PROCESSORS:
+                value = _METADATA_PROCESSORS[name](value, self.settings)
+            result[name] = value
+        return result
 
 
 class _FieldBodyTranslator(HTMLTranslator):
@@ -81,7 +84,7 @@ class RstReader(Reader):
 
     def _parse_metadata(self, document):
         """Return the dict containing document metadata"""
-        output = {}
+        metadata = {}
         for docinfo in document.traverse(docutils.nodes.docinfo):
             for element in docinfo.children:
                 if element.tagname == 'field':  # custom fields (e.g. summary)
@@ -96,13 +99,13 @@ class RstReader(Reader):
                     value = element.astext()
                 name = name.lower()
 
-                output[name] = self.process_metadata(name, value)
-        return output
+                metadata[name] = value
+        return self.process_metadata(metadata)
 
     def _get_publisher(self, filename):
         extra_params = {'initial_header_level': '2'}
         pub = docutils.core.Publisher(
-                destination_class=docutils.io.StringOutput)
+            destination_class=docutils.io.StringOutput)
         pub.set_components('standalone', 'restructuredtext', 'html')
         pub.writer.translator_class = PelicanHTMLTranslator
         pub.process_programmatic_settings(None, extra_params, None)
@@ -136,8 +139,8 @@ class MarkdownReader(Reader):
         metadata = {}
         for name, value in md.Meta.items():
             name = name.lower()
-            metadata[name] = self.process_metadata(name, value[0])
-        return content, metadata
+            metadata[name] = value[0]
+        return content, self.process_metadata(metadata)
 
 
 class HtmlReader(Reader):
@@ -152,9 +155,9 @@ class HtmlReader(Reader):
                 key = i.split(':')[0][5:].strip()
                 value = i.split(':')[-1][:-3].strip()
                 name = key.lower()
-                metadata[name] = self.process_metadata(name, value)
+                metadata[name] = value
 
-            return content, metadata
+            return content, self.process_metadata(metadata)
 
 
 _EXTENSIONS = {}
